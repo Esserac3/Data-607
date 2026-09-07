@@ -1,0 +1,88 @@
+---
+title: "ccb_week1"
+date: "09/6/2026"
+author: "CaresseCB"
+format: html
+  code-fold: true
+  toc: true
+editor: visual
+---
+
+# **Employee Attrition Analysis**
+
+### [**Approach**]{.underline}
+
+I will be analyzing a dataset that contains information about employee attrition.
+
+I plan to compare data to find the strongest correlations that would help organizations develop retention strategies. I will use summary statistics and visualizations to identify patterns and compare attrition rates across different employee and workplace characteristics.
+
+Data Source: <https://raw.githubusercontent.com/Esserac3/Data-607/refs/heads/main/employee_attrition_performance.csv>
+
+Citation: Perea Vega, C. (2026). Employee Attrition Performance \[Data set\]. Kaggle. <https://www.kaggle.com/datasets/carlospereavega/employee-attrition-performance>
+
+# **Code Base**
+
+First import library and data set
+
+```{r}
+#getting tidyverse package
+library(tidyverse)
+```
+
+```{r}
+my_data<-read.csv("employee_attrition_performance.csv")
+```
+
+Now, below I will inspect the data
+
+```{r}
+str(my_data)
+```
+
+I want to see overview of the data
+
+```{r}
+summary(my_data)
+```
+
+I want to compare age and attrition in a boxplot
+
+```{r}
+ggplot(data = my_data, mapping = aes(x=age, y= attrition))+geom_boxplot()
+```
+
+Look at salary versus age versus attrition
+
+```{r}
+my_data %>%
+  select(age, monthly_salary, job_satisfaction, attrition) %>%
+  group_by(age, attrition)%>%
+  filter(mean(monthly_salary)>100000)%>%
+  arrange(desc(monthly_salary))
+```
+
+Let's look at people that left the company
+
+```{r}
+my_data %>%
+  filter(attrition=="Yes")
+```
+
+What is the average years worked for those that left the company
+
+```{r}
+my_data %>%
+  filter((attrition=="Yes"))%>%
+  summarise(mean_years_worked=mean(years_at_company))
+```
+
+# **Conclusion**
+
+I have analyzed the data searching for different connections. I created a boxplot to show if age was a major factor. Then completed some other functions to find other connections. To expand on my data, I would find compare department to job satisfaction to see if this is a strong factor is employee attrition. I found that the average time someone worked for the company was 2 years. The data shows that people that left the company is skewed to a younger age.
+
+**AI Use**
+
+Gemini was used to clarify why errors were occurring, look up specific functions needed, and examples in how data can be manipulated. Documentation of prompts have been saved if needed for grading. I only used codes I fully understood and am responsible for the submitted analysis, code and conclusions.
+
+Model: Gemini 2.5 Flash Developer: Google\
+Date accessed: Sept 6th
