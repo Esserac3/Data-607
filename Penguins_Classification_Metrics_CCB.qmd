@@ -1,0 +1,78 @@
+---
+title: "Penguins_Classification_Metrics_CCB"
+Date: "09/10/2026"
+format: html
+---
+
+# Penguin Predictions Approach
+
+In order to practice classification metrics, I will first look over the data and then run a series of codes to test it's accuracy.
+
+As I work with the data to calculate the null rate and experiment with different probability thresholds.
+
+### Null Rate Error
+
+From the penguins predictions, we can see that there are 54 males and 39 females. Classifying the majority of the penguins male would mean we would have a null rate error of 41.9%. Males are the majority in this dataset.
+
+```{r load date} #loading data}
+library(tidyverse) 
+penguin_predictions <- read_csv("penguin_predictions.csv")  
+```
+
+```{r glimpse}
+glimpse(penguin_predictions)
+```
+
+```{r } #count of each class}
+table(penguin_predictions$sex)
+```
+
+```{r null error rate} #calcute null error rate}
+gender_counts <-table(penguin_predictions$sex)  
+null_error_rate <- 1 - max(gender_counts)/sum(gender_counts)  
+null_error_rate
+```
+
+### Confusion Matrix
+
+We can measure the thresholds. The tables below count the true positives, false positives, true negatives, and false negatives produced using the 0.2, 0.5, and 0.8 threshold.
+
+```{r}
+penguin_predictions <- penguin_predictions %>%   
+  mutate(     
+    pred_2 = if_else(.pred_female >= 0.2, "female", "male"),     
+    pred_5 = if_else(.pred_female >= 0.5, "female", "male"),     
+    pred_8 = if_else(.pred_female >= 0.8, "female", "male")  
+    ) 
+penguin_predictions 
+```
+
+```{r}
+table(   
+  Predicted = penguin_predictions$pred_2,   
+  Actual = penguin_predictions$sex ) 
+```
+
+```{r}
+table(   
+  Predicted = penguin_predictions$pred_5,   
+  Actual = penguin_predictions$sex )
+```
+
+```{r}
+table(   Predicted = penguin_predictions$pred_8,   
+         Actual = penguin_predictions$sex )
+```
+
+### Explanation
+
+For each threshold, the predicted sex will be female. If 20% chance the penguin is female, then call it female otherwise it is male. In the first code chunk, we see 32 females as TP, 6 actual female categorized as male meaning FP, 2 actual male categorized as female meaning FN, and 48 actual male categorized as male as TN.
+
+### Performance Metrics
+
+Accuracy = How often was the prediction correct overall? Precision = Of the penguins predicted to be female, how many actually were female? \
+Recall = Of the penguins who were actually female, how many did the model identify? \
+F1 score = A combined measure of precision and recall.
+
+```{r}
+```
