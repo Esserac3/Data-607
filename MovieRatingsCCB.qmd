@@ -1,0 +1,133 @@
+---
+title: "MoviesCCB2A"
+author: "Caresse Cross Beard"
+format: html
+editor: visual
+---
+
+## Approach
+
+Install pgAdmin4 and create database to analyse movies and their ratings.
+
+## PgAdmin4
+
+I inputted data into my database I created in pgAdmin4. I inserted tables for user, movies and ratings.
+
+```{r}
+library(DBI) 
+library(RPostgres) 
+library(dplyr) 
+library(tidyr)
+```
+
+## Connect to the database
+
+I connect to the database below. I figured out how to add it and hide my password. I used Gemini to help me figure out how to do that in Rstudio.
+
+```{r}
+con <- dbConnect(
+  RPostgres::Postgres(),
+  dbname = "MoviesCCB",
+  host = "localhost",
+  port = 5432,
+  user = "postgres",
+  password = Sys.getenv("DB_PASSWORD")
+)
+
+```
+
+## Fetch data frames
+
+```{r}
+ratings <- dbGetQuery(con, "
+  SELECT
+    u.user_name,
+    m.movie_title,
+    r.rating_value
+  FROM Ratings r
+  JOIN Users u
+    ON r.user_id = u.user_id
+  JOIN Movies m
+    ON r.movie_id = m.movie_id;
+")
+```
+
+```{r}
+users <- dbReadTable(con, "users")
+movies <- dbReadTable(con, "movies")
+ratings <- dbReadTable(con, "ratings")
+```
+
+```{r check tables}
+dbListTables(con)
+```
+
+```{r disconnect from database}
+dbDisconnect(con)
+```
+
+```{r list data from tables}
+users
+movies
+ratings
+```
+
+```{r join three tables together}
+movie_ratings <- ratings %>%
+  left_join(users, by = "user_id") %>%
+  left_join(movies, by = "movie_id")
+```
+
+```{r see new table}
+movie_ratings
+```
+
+```{r add characters to table}
+complete_ratings <- movie_ratings %>%
+  complete(
+    user_name,
+    movie_title
+  )
+```
+
+```{r show NA ratings}
+complete_ratings %>%
+  filter(is.na(rating_value))
+```
+
+## Movie rating summary
+
+```{r summarize by movie}
+movie_summary <- complete_ratings %>%
+  group_by(movie_title) %>%
+  summarise(
+    average_score = mean(rating_value, na.rm = TRUE),
+    missing_ratings = sum(is.na(rating_value)),
+    .groups = "drop"
+  )
+
+```
+
+```{r}
+movie_summary
+```
+
+## Summary by user
+
+```{r summarize by user}
+user_summary <- complete_ratings %>%
+  group_by(user_name) %>%
+  summarise(
+    movies_watched = sum(!is.na(rating_value)),
+    average_score = mean(rating_value, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+```{r}
+user_summary
+```
+
+## Conclusion
+
+From my data, the movie with the highest average rating was *Spiderman: Brand New Day*. The second highest average rated movie is a tie between *The Drama* and *Odyssey.* Spiderman was the highest rated and all 5 friends had seen the movie.
