@@ -1,0 +1,124 @@
+---
+title: "Week3A.GlobalB"
+author: "Caresse Cross Beard"
+format: html
+editor: visual
+---
+
+## Approach
+
+Connect to my database in pgadmin4 and load the movies data I created. I will calculate the global baseline for a movie recommendation.
+
+# Code
+
+```{r load packages}
+library(dplyr)
+library(DBI) 
+library(RPostgres) 
+```
+
+```{r connect to database}
+con <- dbConnect(
+  RPostgres::Postgres(),
+  dbname = "MoviesCCB",
+  host = "localhost",
+  port = 5432,
+  user = "postgres",
+  password = Sys.getenv("DB_PASSWORD")
+)
+```
+
+```{r get table}
+ratings <- dbGetQuery(con, "
+  SELECT *
+  FROM ratings
+")
+
+```
+
+```{r check table}
+head(ratings)
+```
+
+```{r}
+ratings <- dbReadTable(con, "ratings")
+users <- dbReadTable(con, "users")
+movies <- dbReadTable(con, "movies")
+
+
+```
+
+```{r disconnect}
+dbDisconnect(con)
+```
+
+```{r calculate overall average}
+global_mean <- mean(ratings$rating_value, na.rm = TRUE)
+global_mean
+```
+
+The average movie rating was 3.58. Next, I will find each persons bias. Using the mean of the rating value and subtract the global mean.
+
+```{r calculate user bias}
+user_bias <- ratings %>%
+  group_by(user_id) %>%
+  summarise(
+    user_mean = mean(rating_value, na.rm = TRUE),
+    user_bias = user_mean - global_mean
+  )
+user_bias
+```
+
+```{r check names}
+user_bias_named <- user_bias %>%
+  left_join(users, by = "user_id") %>%
+  select(user_name, user_mean, user_bias)
+user_bias_named
+```
+
+My friend Jennifer tended to rate higher than the other friends. Then, I will check the movie rating average.
+
+```{r calculate movie bias}
+movie_bias <- ratings %>%
+  group_by(movie_id) %>%
+  summarise(
+    movie_mean = mean(rating_value, na.rm = TRUE),
+    movie_bias = movie_mean - global_mean
+  )
+movie_bias
+```
+
+```{r show movie bias titles}
+movies_named <- movie_bias %>%
+  left_join(movies, by = "movie_id") %>%
+  select(movie_title, movie_mean, movie_bias)
+movies_named
+```
+
+Among my friends, Spider-man: Brand New Day was generally rated higher than the others.
+
+```{r}
+baseline_predictions <- ratings %>%
+  select(user_id, movie_id) %>%
+  distinct() %>%
+  left_join(user_bias, by = "user_id") %>%
+  left_join(movie_bias, by = "movie_id") %>%
+  mutate(
+    predicted_rating = global_mean + user_bias + movie_bias
+  )
+baseline_predictions
+```
+
+```{r}
+baseline_predictions_named <- baseline_predictions %>%
+  left_join(users, by = "user_id") %>%
+  left_join(movies, by = "movie_id") %>%
+  select(user_name, movie_title, predicted_rating)
+```
+
+```{r check Jennifer}
+baseline_predictions_named %>%
+  filter(user_name == "Jennifer") %>%
+  arrange(desc(predicted_rating))
+
+```
